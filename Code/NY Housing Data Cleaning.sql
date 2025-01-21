@@ -120,10 +120,108 @@ SET COUNTRY = PARSENAME(REPLACE(FORMATTED_ADDRESS,',','.'),1)
 UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
 SET TYPE = TRIM(REPLACE(TYPE,'for sale',''))
 
+--I noticed that a few of the sublocality are just areas parts of a certain burough or a county and the locality doesn't mention this so what I will do is create a new column that will help create a better idea for what I'm looking for
+SELECT DISTINCT Borough 
+FROM [NY Housing Dataset]
+
+ALTER TABLE [New York Housing Market].[dbo].[NY Housing Dataset]
+ADD Borough NVARCHAR(255)
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = Sublocality
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Manhattan'
+WHERE Borough = 'New York County'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Brooklyn'
+WHERE Borough = 'Brooklyn Heights'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Bronx'
+WHERE Borough = 'Bronx County'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Bronx'
+WHERE Borough = 'Riverdale'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Queens'
+WHERE Borough = 'Jackson Heights'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Brooklyn'
+WHERE Borough = 'Fort Hamilton'
+
+SELECT *
+FROM [NY Housing Dataset]
+WHERE Borough = 'New York'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Manhattan'
+WHERE STREET_NAME = 'Manhattan'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Brooklyn'
+WHERE FORMATTED_ADDRESS = '3007 Ave. S, Brooklyn, NY 11229, USA'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Manhattan'
+WHERE FORMATTED_ADDRESS = '1st Ave., New York, NY 10003, USA'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Staten Island'
+WHERE City = ' Staten Island' 
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Manhattan'
+WHERE STREET_NAME = 'New York County'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Queens'
+WHERE STREET_NAME = 'Queens County'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Bronx'
+WHERE CITY = ' Bronx'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Brooklyn'
+WHERE Borough = 'Snyder Avenue'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Queens'
+WHERE Borough = 'Rego Park'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Bronx'
+WHERE Borough = 'East Bronx'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Queens'
+WHERE Borough = 'Flushing'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Brooklyn'
+WHERE Borough = 'Coney Island'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Brooklyn'
+WHERE Borough = 'Dumbo'
+
+UPDATE [New York Housing Market].dbo.[NY Housing Dataset]
+SET Borough = 'Staten Island'
+WHERE Borough = 'Richmond County'
+
+SELECT *
+FROM [NY Housing Dataset]
+WHERE Address is null
+
 --Now that most of the data is cleaned we can start doing some research on out data
 --What is the mean price of the housing
-SELECT cast(avg(price) as INT) as AvgPrice
-from [New York Housing Market].dbo.[NY Housing Dataset]
+SELECT round(AVG(CAST(price AS FLOAT)),2) AS AvgPrice
+FROM [New York Housing Market].dbo.[NY Housing Dataset]
 --The given average is 2356940
 --This mean is probably squed due to the outlier 
 --Now to compare the most expensive properties to the least expensive properties
@@ -142,7 +240,7 @@ WHERE FORMATTED_ADDRESS = '6659 Amboy Rd, Staten Island, NY 10309, USA'
 --Now to find the minimum priced property in this dataset
 --The first few houses are rental properties which explains why the price is must lower than I thought it would
 --Some more insight on this dataset is that most of these prices are from pre 2020 so most of these properties do not reflect the current day prices
-SELECT TOP 10 TYPE, Price, Formatted_Address, Brokerage_Company
+SELECT TOP 10 TYPE, BEDS, Bath, Price, Formatted_Address, Brokerage_Company
 FROM [NY Housing Dataset]
 ORDER BY PRICE 
 
@@ -160,6 +258,61 @@ FROM
 --Q1 = 499000
 --Q2 = 825000
 --Q3 = 1495000
+
+SELECT count(*)
+FROM [NY Housing Dataset]
+
+--To check the average price by sublocality
+SELECT Type, sublocality, avg(price) as AVG_Price
+FROM [Ny Housing Dataset]
+WHERE Type not in ('Foreclosure','Pending','','Contingent')
+GROUP BY type, sublocality
+Order by AVG_Price desc
+
+
+
+--Calculating the average price by borough
+SELECT Borough, COUNT(Borough) as Bor_COUNT, min(price) as MINPrice, max(price) as MAXprice, round(avg(cast(price as FLOAT)),0) as AVGPRICE
+FROM [NY Housing Dataset]
+GROUP BY Borough
+ORDER BY AVGPRICE DESC
+
+--After collecting information on price by borough, I want to rank Borough by its average price and to do that create a cte table
+WITH BoroughSTAT AS(
+	SELECT Borough, COUNT(Borough) as Bor_COUNT, min(price) as MINPrice, max(price) as MAXprice, round(avg(cast(price as FLOAT)),0) as AVGPRICE
+	FROM [NY Housing Dataset]
+	GROUP BY Borough
+)
+
+SELECT ROW_NUMBER () over (ORDER BY AVGPRICE) AS RANK, Borough, AVGPRICE
+FROM BoroughSTAT
+--Seems like Bronx has some of the lowest property cost but there are some reasons for that as due to safety issues. 
+--No borough is completely safe but some of the more dangerous neighborhoods are in the bronx compared to Manhattan where it's more likely to have police patrolling
+
+--To explore attributes of a property for example number of bathrooms and bedrooms and how they correlate with price
+SELECT avg(bath) as AvgBaths, round(avg(cast(price as FLOAT)),0) as AVGPRICE
+FROM [NY Housing Dataset]
+
+SELECT avg(beds) as AvgBeds, round(avg(cast(price as FLOAT)),0) as AVGPRICE
+FROM [NY Housing Dataset]
+
+SELECT BATH, count(BATH) as AmtBaths, AVG(PRICE) as AvgPrice, Borough
+FROM [NY Housing Dataset]
+GROUP BY BATH, Borough
+ORDER BY Borough
+
+
+SELECT BEDS, count(BEDS) as AmtBeds, AVG(PRICE) as AvgPrice, Borough
+FROM [NY Housing Dataset]
+GROUP BY BEDS, Borough
+ORDER BY Borough
+
+--One thing that I noticed after going through this data there is a noticable price dip once it gets to a certain number of baths or beds and after doing some looking around townhouses and multi family homes are more prevoluent
+--high number of baths/ beds so maybe townhouses and multi family homes are worth less than single family homes or condos which is why there is a sudden dip around 6 - 7  baths and for 8 - 10 BEDS 8
+SELECT *
+From [NY Housing Dataset]
+WHERE BEDS = 7
+ORDER BY Borough
 
 
 --What is the average price of the properties each brokerage company is selling
