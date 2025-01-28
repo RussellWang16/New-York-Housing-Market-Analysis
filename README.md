@@ -4,3 +4,7 @@ As a resident of New York State, I have noticed that there have been changes to 
 
 Medium Article
 https://medium.com/@russell.wang/exploring-the-new-york-housing-market-using-sql-52ec825f833b
+
+
+Power BI Dashboard
+https://tinyurl.com/3vtmcn96
