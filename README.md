@@ -7,6 +7,7 @@ https://medium.com/@russell.wang/exploring-the-new-york-housing-market-using-sql
 
 
 Power BI Dashboard
-![image](https://github.com/user-attachments/assets/d51862fe-7b2e-4c60-b331-a3994b7017b1)
+![image](https://github.com/user-attachments/assets/cd301a0c-0d0e-4b3a-bf9f-148165cf33fb)
+
 
 
